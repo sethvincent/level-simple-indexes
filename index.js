@@ -51,7 +51,7 @@ Indexer.prototype.modifyIndexes = function (type, obj, cb) {
   each(keys, iterator, end)
 
   function iterator (key, i, next) {
-    if (typeof obj[key] === 'string' || typeof obj[key] === 'boolean') {
+    if (typeof obj[key] !== 'object' || !(isArray(obj[key]))) {
       self.indexes[key][type](obj)
       next()
     }
