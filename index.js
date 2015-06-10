@@ -23,10 +23,12 @@ function Indexer (db, opts) {
 }
 
 Indexer.prototype.find = function (index, opts) {
+  if (!this.indexes[index]) return cb(new Error(index + ' index not found'))
   return this.indexes[index].find(opts)
 }
 
 Indexer.prototype.findOne = function (index, opts, cb) {
+  if (!this.indexes[index]) return cb(new Error(index + ' index not found'))
   return this.indexes[index].findOne(opts, cb)
 }
 

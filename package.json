@@ -1,7 +1,7 @@
 {
   "name": "level-simple-indexes",
   "description": "",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "repository": {
     "url": "git://github.com/sethvincent/level-simple-indexes.git"
   },
