@@ -1,23 +1,26 @@
 {
   "name": "level-simple-indexes",
-  "description": "",
-  "version": "1.0.0",
+  "description": "Create multiple indexes of data stored in a leveldb using level-indexer",
+  "version": "2.0.0",
   "repository": {
     "url": "git://github.com/sethvincent/level-simple-indexes.git"
   },
   "main": "index.js",
   "scripts": {
-    "test": "",
-    "start": ""
+    "lint": "standard",
+    "test": "node test.js | tap-spec"
   },
   "dependencies": {
-    "clone": "^1.0.2",
     "each-async": "^1.1.1",
+    "is-number": "^2.1.0",
     "isarray": "0.0.1",
     "level-indexer": "^2.0.0"
   },
   "devDependencies": {
-    "tap-spec": "^4.0.0",
-    "tape": "^4.0.0"
+    "memdb": "^1.3.1",
+    "standard": "^7.0.1",
+    "subleveldown": "^2.1.0",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.5.1"
   }
 }

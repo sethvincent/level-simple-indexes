@@ -1,7 +1,7 @@
 var indexer = require('level-indexer')
+var isNumber = require('is-number')
 var isArray = require('isarray')
 var each = require('each-async')
-var clone = require('clone')
 
 module.exports = Indexer
 
@@ -11,7 +11,7 @@ function Indexer (db, opts) {
   var self = this
 
   var indexOpts = {
-    keys: opts.keys || true, 
+    keys: opts.keys || true,
     values: opts.values || true,
     map: opts.map
   }
@@ -23,7 +23,7 @@ function Indexer (db, opts) {
 }
 
 Indexer.prototype.find = function (index, opts) {
-  if (!this.indexes[index]) return cb(new Error(index + ' index not found'))
+  if (!this.indexes[index]) throw new Error(index + ' index not found')
   return this.indexes[index].find(opts)
 }
 
@@ -50,43 +50,41 @@ Indexer.prototype.updateIndexes = function (obj, cb) {
 Indexer.prototype.modifyIndexes = function (type, obj, cb) {
   var self = this
   var keys = Object.keys(this.indexes)
-  each(keys, iterator, end)
+  each(keys, iterator, cb)
 
-  function iterator (key, i, next) {
-    if (typeof obj[key] !== 'object' || !(isArray(obj[key]))) {
-      self.indexes[key][type](obj)
-      next()
-    }
-
-    else if (isArray(obj[key])) {
-      each(obj[key], function (item, i, done) {
-        var data = clone(obj)
-        data[key] = item
-        self.indexes[key][type](data)
-        done()
-      }, function () {
-        next()
+  function splitKeys (key) {
+    if (isArray(key)) return key
+    else {
+      return key.split('.').map(function (key) {
+        if (isNumber(key)) return parseInt(key)
+        return key
       })
     }
-
-    else if (obj[key] && typeof(obj[key]) === 'object') {
-      var properties = Object.keys(obj[key])
-      if (!properties.length) return next()
-
-      each(properties, function (item, i, done) {
-        var data = clone(obj)
-        data[key] = item
-        self.indexes[key][type](data)
-        done()
-      }, function () {
-        next()
-      })
-    }
-
-    else next()
   }
 
-  function end () {
-    if (cb) cb()
+  function modify (key, value, cb) {
+    var doc = { key: obj.key }
+    doc[key] = value
+    self.indexes[key][type](doc, cb)
+  }
+
+  function iterator (key, i, next) {
+    return loop(key, obj, null)
+
+    function loop (key, data, keypath) {
+      keypath = keypath || splitKeys(key)
+      var current = keypath[0]
+      if (keypath.length === 1) {
+        if (isArray(data[current])) {
+          each(data[current], function (item, i, done) {
+            modify(key, item, done)
+          }, next)
+        } else {
+          modify(key, data[current], next)
+        }
+      } else {
+        return loop(key, data[current], keypath.slice(1))
+      }
+    }
   }
 }
