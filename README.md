@@ -18,6 +18,7 @@ var createIndexer = require('level-simple-indexes')
 var db = sublevel(memdb(), { valueEncoding: 'json' })
 var indexdb = sublevel(db, 'indexes')
 var indexer = createIndexer(indexdb, {
+  // keyName: 'key' <-- optional way to override which attribute in `data` is the key
   properties: ['ingredients.sauce', 'ingredients.toppings.meat'],
   map: function (key, next) {
     db.get(key, next)
