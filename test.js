@@ -200,3 +200,28 @@ test('remove indexes of deeply nested properties', function (t) {
     })
   })
 })
+
+test('use a custom keyname', function (t) {
+  var db = sublevel(memdb(), { valueEncoding: 'json' })
+  var indexdb = sublevel(db, 'indexes')
+  var indexer = createIndexer(indexdb, {
+    keyName: 'id',
+    properties: ['title'],
+    map: function (key, next) {
+      db.get(key, next)
+    }
+  })
+
+  var data = { id: 'pizza', title: 'the best pizza' }
+  db.put(data.id, data, function (err) {
+    t.notOk(err)
+    indexer.addIndexes(data, function () {
+      indexer.findOne('title', 'the best pizza', function (err, result) {
+        t.notOk(err)
+        t.ok(result)
+        t.equal(result.id, 'pizza')
+        t.end()
+      })
+    })
+  })
+})

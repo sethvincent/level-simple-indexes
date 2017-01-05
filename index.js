@@ -15,6 +15,7 @@ function Indexer (db, opts) {
     values: opts.values || true,
     map: opts.map
   }
+  this.keyName = opts.keyName || 'key'
 
   this.indexes = {}
   opts.properties.forEach(function (key) {
@@ -63,7 +64,7 @@ Indexer.prototype.modifyIndexes = function (type, obj, cb) {
   }
 
   function modify (key, value, cb) {
-    var doc = { key: obj.key }
+    var doc = { key: obj[self.keyName] }
     doc[key] = value
     self.indexes[key][type](doc, cb)
   }
