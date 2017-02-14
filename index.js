@@ -23,9 +23,9 @@ function Indexer (db, opts) {
   })
 }
 
-Indexer.prototype.find = function (index, opts) {
+Indexer.prototype.find = function (index, opts, cb) {
   if (!this.indexes[index]) throw new Error(index + ' index not found')
-  return this.indexes[index].find(opts)
+  return this.indexes[index].find(opts, cb)
 }
 
 Indexer.prototype.findOne = function (index, opts, cb) {

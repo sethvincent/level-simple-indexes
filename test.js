@@ -27,6 +27,42 @@ test('index a property', function (t) {
   })
 })
 
+test('find with callback', function (t) {
+  var db = sublevel(memdb(), { valueEncoding: 'json' })
+  var indexdb = sublevel(db, 'indexes')
+  var indexer = createIndexer(indexdb, {
+    properties: ['title'],
+    map: function (key, next) {
+      db.get(key, next)
+    }
+  })
+
+  var data1 = { key: 'pizza', title: 'matching title' }
+  var data2 = { key: 'more pizza', title: 'matching title' }
+
+  db.put(data1.key, data1, function (err) {
+    t.notOk(err)
+    db.put(data2.key, data2, function (err) {
+      t.notOk(err)
+      indexer.addIndexes(data1, function (err) {
+        t.notOk(err)
+        indexer.addIndexes(data2, function (err) {
+          t.notOk(err)
+          indexer.find('title', 'matching title', function (err, results) {
+            t.notOk(err)
+            var keys = results.map(function (result) {
+              return result.key
+            }).sort()
+
+            t.deepEqual(keys, ['more pizza', 'pizza'])
+            t.end()
+          })
+        })
+      })
+    })
+  })
+})
+
 test('index multiple properties', function (t) {
   var db = sublevel(memdb(), { valueEncoding: 'json' })
   var indexdb = sublevel(db, 'indexes')
