@@ -19,7 +19,10 @@ function Indexer (db, opts) {
 
   this.indexes = {}
   opts.properties.forEach(function (key) {
-    self.indexes[key] = indexer(db, [key], indexOpts)
+    if (!Array.isArray(key)) {
+      key = [key]
+    }
+    self.indexes[key.join('!')] = indexer(db, key, indexOpts)
   })
 }
 
