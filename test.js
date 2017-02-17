@@ -285,7 +285,6 @@ test('index with multiple keys', function (t) {
 
           indexer.findOne(['title', 'description'], ['pineapple', 'also good'], function (err, result) {
             t.notOk(err)
-            console.log(result)
             t.equal(result.key, data2.key)
             t.end()
           })
