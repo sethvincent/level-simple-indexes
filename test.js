@@ -261,3 +261,26 @@ test('use a custom keyname', function (t) {
     })
   })
 })
+
+test('indexing with multiple keys', function (t) {
+  var db = sublevel(memdb(), { valueEncoding: 'json' })
+  var indexdb = sublevel(db, 'indexes')
+  var indexer = createIndexer(indexdb, {
+    properties: [['title', 'description']],
+    map: function (key, next) {
+      db.get(key, next)
+    }
+  })
+
+  var data = { key: 'foo', title: 'pepperoni', description: 'very good' }
+  db.put(data.key, data, function (err) {
+    t.notOk(err)
+    indexer.addIndexes(data, function () {
+      indexer.findOne('title!description', data, function (err, result) {
+        t.notOk(err)
+        t.equal(result.key, data.key)
+        t.end()
+      })
+    })
+  })
+})
