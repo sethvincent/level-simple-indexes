@@ -10,10 +10,13 @@ function Indexer (db, opts) {
   opts = opts || {}
   var self = this
 
+  this.sep = opts.sep || '!'
+
   var indexOpts = {
     keys: opts.keys || true,
     values: opts.values || true,
-    map: opts.map
+    map: opts.map,
+    sep: this.sep
   }
   this.keyName = opts.keyName || 'key'
 
@@ -26,14 +29,19 @@ function Indexer (db, opts) {
   })
 }
 
+Indexer.prototype.getIndex = function (key) {
+  return this.indexes[Array.isArray(key) ? key.join('!') : key]
+}
+
 Indexer.prototype.find = function (index, opts, cb) {
-  if (!this.indexes[index]) throw new Error(index + ' index not found')
-  return this.indexes[index].find(opts, cb)
+  if (!this.getIndex(index)) throw new Error(index + ' index not found')
+
+  return this.getIndex(index).find(opts, cb)
 }
 
 Indexer.prototype.findOne = function (index, opts, cb) {
-  if (!this.indexes[index]) return cb(new Error(index + ' index not found'))
-  return this.indexes[index].findOne(opts, cb)
+  if (!this.getIndex(index)) return cb(new Error(index + ' index not found'))
+  return this.getIndex(index).findOne(opts, cb)
 }
 
 Indexer.prototype.addIndexes = function (obj, cb) {
@@ -53,42 +61,49 @@ Indexer.prototype.updateIndexes = function (obj, cb) {
 
 Indexer.prototype.modifyIndexes = function (type, obj, cb) {
   var self = this
-  var keys = Object.keys(this.indexes)
-  each(keys, iterator, cb)
 
-  function splitKeys (key) {
-    if (isArray(key)) return key
-    else {
-      return key.split('.').map(function (key) {
-        if (isNumber(key)) return parseInt(key)
-        return key
-      })
-    }
-  }
-
-  function modify (key, value, cb) {
-    var doc = { key: obj[self.keyName] }
-    doc[key] = value
-    self.indexes[key][type](doc, cb)
-  }
+  return each(Object.keys(this.indexes), iterator, cb)
 
   function iterator (key, i, next) {
-    return loop(key, obj, null)
+    var modifications = []
+    var keys = key.split(self.sep)
+    var paths = keys.map(function (key) {
+      return key.split('.')
+    })
 
-    function loop (key, data, keypath) {
-      keypath = keypath || splitKeys(key)
-      var current = keypath[0]
-      if (keypath.length === 1) {
-        if (isArray(data[current])) {
-          each(data[current], function (item, i, done) {
-            modify(key, item, done)
-          }, next)
-        } else {
-          modify(key, data[current], next)
-        }
-      } else {
-        return loop(key, data[current], keypath.slice(1))
+    var values = paths.map(function (path) {
+      var current = obj
+      path.forEach(function (pathItem) {
+        current = current[pathItem]
+      })
+      return current
+    })
+
+    buildModifications(values)
+    each(modifications, modifyIndex, next)
+
+    function buildModifications (values) {
+      var hasArray
+      values.forEach(function (value, index) {
+        if (!Array.isArray(value)) return
+        hasArray = true
+        value.forEach(function (item) {
+          var subValues = values.slice()
+          subValues[index] = item
+          buildModifications(subValues)
+        })
+      })
+      if (!hasArray) {
+        modifications.push(values)
       }
+    }
+
+    function modifyIndex (values, i, cb) {
+      var doc = {key: obj[self.keyName]}
+      values.forEach(function (value, index) {
+        doc[keys[index]] = value
+      })
+      self.getIndex(keys)[type](doc, cb)
     }
   }
 }

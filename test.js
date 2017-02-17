@@ -262,7 +262,7 @@ test('use a custom keyname', function (t) {
   })
 })
 
-test('indexing with multiple keys', function (t) {
+test('index with multiple keys', function (t) {
   var db = sublevel(memdb(), { valueEncoding: 'json' })
   var indexdb = sublevel(db, 'indexes')
   var indexer = createIndexer(indexdb, {
@@ -272,14 +272,67 @@ test('indexing with multiple keys', function (t) {
     }
   })
 
-  var data = { key: 'foo', title: 'pepperoni', description: 'very good' }
+  var data1 = { key: 'foo', title: 'pepperoni', description: 'very good' }
+  var data2 = { key: 'bar', title: 'pineapple', description: 'also good' }
+  db.put(data1.key, data1, function (err) {
+    t.notOk(err)
+    db.put(data2.key, data2, function (err) {
+      t.notOk(err)
+      indexer.addIndexes(data1, function (err) {
+        t.notOk(err)
+        indexer.addIndexes(data2, function (err) {
+          t.notOk(err)
+
+          indexer.findOne(['title', 'description'], ['pineapple', 'also good'], function (err, result) {
+            t.notOk(err)
+            console.log(result)
+            t.equal(result.key, data2.key)
+            t.end()
+          })
+        })
+      })
+    })
+  })
+})
+
+test('index with multiple deep array keys', function (t) {
+  var db = sublevel(memdb(), { valueEncoding: 'json' })
+  var indexdb = sublevel(db, 'indexes')
+  var indexer = createIndexer(indexdb, {
+    properties: [['apple.seeds', 'can.beans']],
+    map: function (key, next) {
+      db.get(key, next)
+    }
+  })
+
+  var data = {
+    key: 'abc123',
+    apple: {
+      seeds: ['safe', 'poisonous']
+    },
+    can: {
+      beans: ['pinto', 'garbonzo', 'green']
+    }
+  }
+
+  t.plan(8)
+
   db.put(data.key, data, function (err) {
     t.notOk(err)
-    indexer.addIndexes(data, function () {
-      indexer.findOne('title!description', data, function (err, result) {
+    indexer.addIndexes(data, function (err) {
+      t.notOk(err)
+
+      indexer.findOne(['apple.seeds', 'can.beans'], ['safe', 'pinto'], function (err, result) {
         t.notOk(err)
         t.equal(result.key, data.key)
-        t.end()
+      })
+      indexer.findOne(['apple.seeds', 'can.beans'], ['poisonous', 'garbonzo'], function (err, result) {
+        t.notOk(err)
+        t.equal(result.key, data.key)
+      })
+      indexer.findOne(['apple.seeds', 'can.beans'], ['safe', 'green'], function (err, result) {
+        t.notOk(err)
+        t.equal(result.key, data.key)
       })
     })
   })
