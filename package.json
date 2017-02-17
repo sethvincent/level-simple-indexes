@@ -1,7 +1,7 @@
 {
   "name": "level-simple-indexes",
   "description": "Create multiple indexes of data stored in a leveldb using level-indexer",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "repository": {
     "url": "git://github.com/sethvincent/level-simple-indexes.git"
   },
